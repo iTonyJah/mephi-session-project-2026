@@ -1,4 +1,3 @@
-
 sudo hostnamectl set-hostname mephi-2026.domain.local
 nmcli -t -f NAME,DEVICE con show --active | grep -v 'lo' | cut -d: -f1
 sudo nmcli connection modify "Wired connection 1" ipv4.addresses 192.168.122.100/24 ipv4.gateway 192.168.122.1 ipv4.dns "8.8.8.8" ipv4.method manual connection.autoconnect yes
@@ -41,7 +40,7 @@ sudo setcap cap_net_raw,cap_net_admin=eip /usr/sbin/tcpdump
 getcap /usr/sbin/tcpdump
 sudo -u mephi-admin tcpdump --help
 sudo cp /etc/pam.d/login /etc/pam.d/login.bak
-sudo nano /etc/pam.d/login
+sudo vi /etc/pam.d/login
 sudo sed -i '1a auth required pam_succeed_if.so user != root quiet' /etc/pam.d/sshd
 sudo systemctl restart sshd
 su - root
