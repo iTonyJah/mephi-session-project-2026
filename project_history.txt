@@ -1,0 +1,65 @@
+
+sudo hostnamectl set-hostname mephi-2026.domain.local
+nmcli -t -f NAME,DEVICE con show --active | grep -v 'lo' | cut -d: -f1
+sudo nmcli connection modify "Wired connection 1" ipv4.addresses 192.168.122.100/24 ipv4.gateway 192.168.122.1 ipv4.dns "8.8.8.8" ipv4.method manual connection.autoconnect yes
+sudo nmcli connection up "Wired connection 1"
+ip a
+ping -c 4 8.8.8.8
+ping -c 4 192.168.122.1
+sudo dnf install nginx -y
+sudo dnf install tcpdump libcap-ng-utils -y
+dnf download tcpdump --destdir /tmp
+cp /tmp/tcpdump*.rpm ~/tcpdump.rpm
+lsblk
+sudo parted -s /dev/vdb mklabel msdos mkpart primary ext4 1MiB 100%
+lsblk
+sudo mkfs.ext4 -L MEPHI_DATA /dev/vdb1
+sudo blkid /dev/vdb1
+sudo mkdir -p /data/mephi-web
+echo "LABEL=MEPHI_DATA /data/mephi-web ext4 defaults 0 2" | sudo tee -a /etc/fstab
+tail -1 /etc/fstab
+sudo mount -a
+df -h /data/mephi-web
+sudo systemctl enable --now nginx
+sudo systemctl status nginx
+sudo journalctl -u nginx --since "5 minutes ago"
+sudo groupadd mephi-devs
+sudo useradd -m -s /bin/bash mephi-admin
+sudo passwd mephi-admin
+sudo usermod -aG mephi-devs mephi-admin
+id mephi-admin
+sudo chown mephi-admin:mephi-devs /data/mephi-web
+sudo chmod 2775 /data/mephi-web
+ls -ld /data/mephi-web
+sudo setenforce 1
+getenforce
+sudo sed -i 's/^SELINUX=.*/SELINUX=enforcing/' /etc/selinux/config
+sudo semanage fcontext -a -t httpd_sys_content_t "/data/mephi-web(/.*)?"
+sudo restorecon -Rv /data/mephi-web
+ls -Zd /data/mephi-web
+sudo setcap cap_net_raw,cap_net_admin=eip /usr/sbin/tcpdump
+getcap /usr/sbin/tcpdump
+sudo -u mephi-admin tcpdump --help
+sudo cp /etc/pam.d/login /etc/pam.d/login.bak
+sudo nano /etc/pam.d/login
+sudo sed -i '1a auth required pam_succeed_if.so user != root quiet' /etc/pam.d/sshd
+sudo systemctl restart sshd
+su - root
+echo '<h1>Hello from Student: 371752</h1><p>Server is running on Fedora 44.</p>' | sudo tee /data/mephi-web/index.html
+sudo sed -i 's|/usr/share/nginx/html|/data/mephi-web|g' /etc/nginx/nginx.conf
+sudo nginx -t
+sudo systemctl reload nginx
+curl -s http://localhost
+curl -s http://192.168.122.100
+history -w
+cp ~/.bash_history ~/project_history_history_dump.txt
+sudo journalctl -u nginx --since "5 minutes ago" > /tmp/nginx_recent_logs.txt
+sudo cp /etc/fstab ~/fstab.txt
+getenforce > ~/selinux_status.txt
+ls -Zd /data/mephi-web > ~/file_contexts.txt
+getcap /usr/sbin/tcpdump > ~/tcpdump_capabilities.txt
+stat /data/mephi-web > ~/permissions.txt
+id mephi-admin > ~/users_groups.txt
+getent group mephi-devs >> ~/users_groups.txt
+curl -s http://localhost > ~/curl_output.txt
+sudo cp /data/mephi-web/index.html ~/index.html
